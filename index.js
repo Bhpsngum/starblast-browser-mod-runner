@@ -36,7 +36,7 @@ class StarblastBrowserModRunner {
     }
 
     for (let i of ["step", "options", "link"]) Object.defineProperty(game, i, {
-      get() {return node[i]}
+      get() {return node[i] ?? null}
     });
 
     for (let i of ["alien", "asteroid", "collectible"]) game["add" + i[0].toUpperCase() + i.slice(1)] = function (...data) {
