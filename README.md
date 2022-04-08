@@ -1,9 +1,9 @@
 # starblast-browser-mod-runner
-A npm package to run mod codes from browser (featuring the [starblast-modding](npmjs.com/package/starblast-modding) npm itself)
+A npm package to run mod codes from browser (featuring the [starblast-modding](https://npmjs.com/package/starblast-modding) npm itself)
 
 ## Warning
 * This package doesn't support undocumented features like accessing through `game.modding`, etc.
-* Since this package is dependent on the [starblast-modding](npmjs.com/package/starblast-modding) npm, some of its latest features (which may doesn't work in browsers) will be available
+* Since this package is dependent on the [starblast-modding](https://npmjs.com/package/starblast-modding) npm, some of its latest features (which may doesn't work in browsers) will be available
 
 ## Installation
 ```
@@ -28,12 +28,12 @@ This container will act as your browser, which has methods described below:
 | - | - |
 | setRegion(region) | set the region the mod will be run on, must be Asia, America or Europe |
 | setECPKey(ECPKey) | set the ECP Key this npm will be used for sending mod creation requests |
-| start | start the mod, will logging the error to the console if it failed to start |
-| stop | start the mod, will logging the error to the console if it failed to stop |
+| start | start the mod, returns a promise |
+| stop | start the mod, returns a promise |
 | loadCodeFromString(script) | load the mod code from a script string |
 | loadCodeFromLocal(path) | load the mod code from a local file (File on your device) |
 | loadCodeFromExternal(URL) | load the mod code from an external URL file |
-| getNode() | returns the original game object called from the [starblast-modding](npmjs.com/package/starblast-modding) npm) |
+| getNode() | returns the original game object called from the [starblast-modding](https://npmjs.com/package/starblast-modding) npm) |
 | getGame() | returns the game object, which acts the same as it is in browser |
 
 ### Example
