@@ -1,0 +1,30 @@
+{
+  "name": "starblast-browser-mod-runner",
+  "version": "0.1.0",
+  "description": "A npm package to run mod codes from browser (featuring the [starblast-modding](npmjs.com/package/starblast-modding) npm itself)",
+  "main": "./index.js",
+  "scripts": {
+    "test": "node ./index.js"
+  },
+  "author": "Bhpsngum <bhpsngumproductions@gmail.com> (https://github.com/Bhspngum)",
+  "repository": "github:bhpsngum/starblast-browser-mod-runner",
+  "homepage": "https://github.com/Bhpsngum/starblast-browser-mod-runner",
+  "bugs": {
+    "url": "https://github.com/Bhpsngum/starblast-browser-mod-runner/issues"
+  },
+  "keywords": [
+    "starblast",
+    "modding",
+    "api",
+    "client",
+    "browser"
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=6.0.0"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "starblast-modding": "^1.0.4-alpha6"
+  }
+}
