@@ -20,7 +20,9 @@ class StarblastBrowserModRunner {
 
     let game = this.#game, context = game.modding.context;
 
-    for (let i of ["setCustomMap", "setOpen", "setRegion", "setECPKey"]) game[i] = node[i].bind(node);
+    for (let i of ["setCustomMap", "setOpen"]) game[i] = node[i].bind(node);
+
+    for (let i of ["setRegion", "setECPKey"]) this[i] = node[i].bind(node);
 
     for (let i of ["ship", "alien", "asteroid", "collectible"]) {
       let manager = node[i + "s"];
