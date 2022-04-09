@@ -20,7 +20,7 @@ class StarblastBrowserModRunner {
 
     let game = this.#game, context = game.modding.context;
 
-    for (let i of ["setCustomMap", "setOpen"]) game[i] = node[i].bind(node);
+    for (let i of ["setCustomMap", "setOpen", "setRegion", "setECPKey"]) game[i] = node[i].bind(node);
 
     for (let i of ["ship", "alien", "asteroid", "collectible"]) {
       let manager = node[i + "s"];
@@ -140,14 +140,6 @@ class StarblastBrowserModRunner {
     node.on('UIComponentClick', function (id, ship) {
       context.event?.({name: "ui_component_clicked", id, ship}, game)
     });
-  }
-
-  setRegion (...data) {
-    this.#node.setRegion(...data)
-  }
-
-  setECPKey (...data) {
-    this.#node.setECPKey(...data)
   }
 
   getNode () {
