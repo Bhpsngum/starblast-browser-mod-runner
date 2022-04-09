@@ -3,7 +3,7 @@ const fs = require('fs').promises;
 const https = require('https');
 const http = require('http');
 
-global.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 class StarblastBrowserModRunner {
   constructor(options) {
@@ -20,19 +20,22 @@ class StarblastBrowserModRunner {
 
     let game = this.#game, context = game.modding.context;
 
-    global.echo = game.modding.terminal.echo;
+    for (let i of ["setCustomMap", "setOpen"]) game[i] = node[i].bind(node);
 
-    for (let i of ["setCustomMap", "setOpen"]) game[i] = function(...data) {
-      node[i](...data)
+    for (let i of ["ship", "alien", "asteroid", "collectible"]) {
+      let manager = node[i + "s"];
+      Object.defineProperty(game, i + "s", {
+        get() { return manager.array() }
+      });
+      game["find" + i[0].toUpperCase() + i.slice(1)] = manager.findById.bind(manager)
     }
 
-    for (let i of ["ship", "alien", "asteroid", "collectible", "team"]) {
-      Object.defineProperty(game, i + "s", {
-        get() {return node[i + "s"]?.array?.() ?? null}
-      });
-      game["find" + i[0].toUpperCase() + i.slice(1)] = function (...data) {
-        return node[i + "s"]?.findById?.(...data) ?? null
-      }
+    Object.defineProperty(game, 'teams', {
+      get() {return node.teams?.array?.() ?? null}
+    });
+
+    game.findTeam = function(...data) {
+      return node.teams?.findById?.(data) ?? null
     }
 
     Object.defineProperty(game, 'stations', {
@@ -53,17 +56,11 @@ class StarblastBrowserModRunner {
       return manager.all.toArray().slice(-1)[0]
     }
 
-    game.setUIComponent = function (...data) {
-      node.ships.setUIComponent(...data)
-    }
+    game.setUIComponent = node.ships.setUIComponent.bind(node.ships);
 
-    game.setObject = function (...data) {
-      node.objects.set(...data)
-    }
+    game.setObject = node.objects.set.bind(node.objects);
 
-    game.removeObject = function (...data) {
-      node.objects.remove(...data)
-    }
+    game.removeObject = node.objects.remove.bind(node.objects);
 
     node.on('tick', function (tick) {
       context.tick?.(game)
@@ -221,7 +218,7 @@ class StarblastBrowserModRunner {
   async start () {
     let code = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code), game = this.#game, node = this.#node;;
     if (!node.started) game.custom = {};
-    new AsyncFunction("game", code).call(game.modding.context, game);
+    new AsyncFunction("game", "echo", code).call(game.modding.context, game, game.modding.terminal.echo);
     node.setOptions(Object.assign({}, game.modding.context.options));
     return await node.start()
   }
