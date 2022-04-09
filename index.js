@@ -208,8 +208,7 @@ class StarblastBrowserModRunner {
         res.setEncoding('utf8');
         res.on('data', (chunk) => { rawData += chunk; });
         res.on('end', function () {
-          try { resolve(rawData) }
-          catch (e) { reject(e) }
+          resolve(rawData)
         });
       }).on('error', reject)
     })
