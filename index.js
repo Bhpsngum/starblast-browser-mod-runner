@@ -3,16 +3,24 @@ const fs = require('fs').promises;
 const https = require('https');
 const http = require('http');
 
+global.AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+
 class StarblastBrowserModRunner {
   constructor(options) {
-    this.#node = new StarblastModding.Client(options),
+    let node = this.#node = new StarblastModding.Client(options);
     this.#game = {
       modding: {
+        terminal: {
+          echo: node.log.bind(node),
+          error: node.error.bind(node)
+        },
         context: {}
       }
     }
 
-    let game = this.#game, node = this.#node, context = game.modding.context;
+    let game = this.#game, context = game.modding.context;
+
+    global.echo = game.modding.terminal.echo;
 
     for (let i of ["setCustomMap", "setOpen"]) game[i] = function(...data) {
       node[i](...data)
@@ -46,7 +54,7 @@ class StarblastBrowserModRunner {
     }
 
     game.setUIComponent = function (...data) {
-      node.ships.setUIComponent(data)
+      node.ships.setUIComponent(...data)
     }
 
     game.setObject = function (...data) {
@@ -63,16 +71,12 @@ class StarblastBrowserModRunner {
 
     // events
 
-    game.echo = function (...data) {
-      node.log(...data);
-    }
-
     node.on('error', function(error) {
-      console.log("In-game error: " + error.message)
+      console.error("[In-game Error]", error)
     });
 
     node.on('log', function(...args) {
-      console.log("In-game log:", ...args);
+      console.log("[In-game Log]", ...args);
     });
 
     node.on('start', function (link) {
@@ -217,7 +221,7 @@ class StarblastBrowserModRunner {
   async start () {
     let code = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code), game = this.#game, node = this.#node;;
     if (!node.started) game.custom = {};
-    Function("game", code).call(game.modding.context, game);
+    new AsyncFunction("game", code).call(game.modding.context, game);
     node.setOptions(Object.assign({}, game.modding.context.options));
     return await node.start()
   }
