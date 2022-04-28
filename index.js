@@ -7,7 +7,7 @@ const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 class StarblastBrowserModRunner {
   constructor(options) {
-    let node = this.#node = new StarblastModding.Client(options);
+    let node = this.#node = new StarblastModding.Client({...options, cacheEvents: true});
     this.#game = {
       modding: {
         terminal: {

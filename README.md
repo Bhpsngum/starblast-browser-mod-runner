@@ -19,7 +19,11 @@ const StarblastBrowserModRunner = require("starblast-browser-mod-runner");
 
 ### Create a container
 ```js
-let container = new StarblastBrowserModRunner({cacheConfiguration: true}); // options from the original starblast-modding npm
+let container = new BrowserModRunner({
+  cacheECPKey: true,
+  cacheOptions: true
+});
+// options from the original starblast-modding npm, note that `cacheEvents` will always be true
 ```
 
 This container will act as your browser, which has methods described below:
@@ -42,7 +46,10 @@ Here is an example for running SDC code pulled from Neuronality's site:
 ```js
 const BrowserModRunner = require("starblast-browser-mod-runner");
 
-global.container = new BrowserModRunner({cacheConfiguration: false});
+let container = new BrowserModRunner({
+  cacheECPKey: true,
+  cacheOptions: true
+});
 
 container.setRegion("Asia");
 
@@ -52,7 +59,7 @@ container.loadCodeFromExternal("https://starblast.data.neuronality.com/mods/sdc.
 
 container.start();
 
-global.game = container.getGame();
+let game = container.getGame();
 
-global.node = container.getNode();
+let node = container.getNode();
 ```
