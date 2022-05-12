@@ -209,7 +209,7 @@ class StarblastBrowserModRunner {
   }
 
   async start () {
-    let code = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code), game = this.#game, node = this.#node;;
+    let code = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code), game = this.#game, node = this.#node;
     if (!node.started) game.custom = {};
     new AsyncFunction("game", "echo", code).call(game.modding.context, game, game.modding.terminal.echo);
     node.setOptions(Object.assign({}, game.modding.context.options));
