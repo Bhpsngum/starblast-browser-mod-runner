@@ -32,8 +32,8 @@ This container will act as your browser, which has methods described below:
 | - | - |
 | setRegion(region) | set the region the mod will be run on, must be Asia, America or Europe |
 | setECPKey(ECPKey) | set the ECP Key this npm will be used for sending mod creation requests |
-| start | start the mod, returns a promise |
-| stop | stop the mod, returns a promise |
+| start() | start the mod, returns a promise |
+| stop() | stop the mod, returns a promise |
 | loadCodeFromString(script) | load the mod code from a script string |
 | loadCodeFromLocal(path) | load the mod code from a local file (File on your device) |
 | loadCodeFromExternal(URL) | load the mod code from an external URL file |
