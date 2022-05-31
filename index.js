@@ -7,65 +7,68 @@ const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 class StarblastBrowserModRunner {
   constructor(options) {
+    this.#sameCodeExecution = !!options?.sameCodeExecution
+    let crashOnError = this.#crashOnError = !!options?.crashOnError;
     let node = this.#node = new StarblastModding.Client({...options, cacheEvents: true});
-    this.#game = {
-      modding: {
-        terminal: {
-          echo: node.log.bind(node),
-          error: node.error.bind(node)
-        },
-        context: {}
-      }
-    }
+    this.#game = {}
 
-    let game = this.#game, context = game.modding.context;
+    this.#assignBasic();
+
+    let game = this.#game, handle = function (spec, ...params) {
+      try { game.modding?.context?.[spec]?.(...params) }
+      catch (e) {
+        if (crashOnError) throw e;
+        else console.error(e);
+      }
+    };
+
+    Object.defineProperty(game, 'custom', {
+      get () { return node.custom },
+      set (value) { node.custom = value }
+    })
 
     for (let i of ["setCustomMap", "setOpen"]) game[i] = node[i].bind(node);
 
     for (let i of ["setRegion", "setECPKey"]) this[i] = node[i].bind(node);
 
     for (let i of ["ship", "alien", "asteroid", "collectible"]) {
-      let manager = node[i + "s"];
       Object.defineProperty(game, i + "s", {
-        get() { return manager.array() }
+        get () { return node[i + "s"].array(true).filter(structure => !structure.isSpawned() || structure.isActive()) },
+        set (value) {}
       });
-      game["find" + i[0].toUpperCase() + i.slice(1)] = manager.findById.bind(manager)
-    }
-
-    Object.defineProperty(game, 'teams', {
-      get() {return node.teams?.array?.() ?? null}
-    });
-
-    game.findTeam = function(...data) {
-      return node.teams?.findById?.(data) ?? null
-    }
-
-    Object.defineProperty(game, 'stations', {
-      get() {return node.teams?.stations?.array?.() ?? null}
-    });
-
-    game.findStation = function(...data) {
-      return node.teams?.stations?.findById?.(data) ?? null
+      Object.defineProperty(node[i + "s"].StructureConstructor.prototype, 'game', {
+        get () { return game },
+        set (value) {}
+      })
+      game["find" + i[0].toUpperCase() + i.slice(1)] = function(...data) {
+        return node[i + "s"].findById(...data)
+      }
     }
 
     for (let i of ["step", "options", "link"]) Object.defineProperty(game, i, {
-      get() {return node[i] ?? null}
+      get() { return node[i] ?? null },
+      set (value) {}
     });
 
     for (let i of ["alien", "asteroid", "collectible"]) game["add" + i[0].toUpperCase() + i.slice(1)] = function (...data) {
-      let manager = node[i + "s"];
-      manager.add(...data);
-      return manager.all.toArray().slice(-1)[0]
+      let name = i + "s";
+      node[name].add(...data).then(a => {}).catch(b => console.error("[In-game Error]", b));
+      let test = this[name].slice(-1)[0];
+      return test;
     }
 
     game.setUIComponent = node.ships.setUIComponent.bind(node.ships);
 
-    game.setObject = node.objects.set.bind(node.objects);
+    game.setObject = function(...data) {
+      node.objects.set(...data)
+    }
 
-    game.removeObject = node.objects.remove.bind(node.objects);
+    game.removeObject = function(...data) {
+      node.objects.remove(...data)
+    }
 
     node.on('tick', function (tick) {
-      context.tick?.(game)
+      handle('tick', game)
     });
 
     // events
@@ -80,67 +83,67 @@ class StarblastBrowserModRunner {
 
     node.on('start', function (link) {
       console.log("Mod started\n" + link);
-      context.event?.({name: "mod_started", link}, game)
+      handle('event', {name: "mod_started", link}, game)
     });
 
     node.on('stop', function () {
       console.log("Mod stopped");
-      context.event?.({name: "mod_stopped"}, game)
+      handle('event', {name: "mod_stopped"}, game)
     });
 
     node.on('shipRespawn', function(ship) {
-      context.event?.({name: "ship_spawned", ship}, game)
+      handle('event', {name: "ship_spawned", ship}, game)
     });
 
     node.on('shipSpawn', function(ship) {
-      context.event?.({name: "ship_spawned", ship}, game)
+      handle('event', {name: "ship_spawned", ship}, game)
     });
 
     node.on('shipDestroy', function(ship, killer) {
-      context.event?.({name: "ship_destroyed", ship, killer}, game)
+      handle('event', {name: "ship_destroyed", ship, killer}, game)
     });
 
     node.on('shipDisconnect', function(ship) {
-      context.event?.({name: "ship_disconnected", ship}, game)
+      handle('event', {name: "ship_disconnected", ship}, game)
     });
 
     node.on('alienCreate', function(alien) {
-      context.event?.({name: "alien_created", alien}, game)
+      handle('event', {name: "alien_created", alien}, game)
     });
 
     node.on('alienDestroy', function(alien, killer) {
-      context.event?.({name: "alien_destroyed", alien, killer}, game)
+      handle('event', {name: "alien_destroyed", alien, killer}, game)
     });
 
     node.on('asteroidCreate', function(asteroid) {
-      context.event?.({name: "asteroid_created", asteroid}, game)
+      handle('event', {name: "asteroid_created", asteroid}, game)
     });
     node.on('asteroidDestroy', function(asteroid, killer) {
-      context.event?.({name: "asteroid_destroyed", asteroid, killer}, game)
+      handle('event', {name: "asteroid_destroyed", asteroid, killer}, game)
     });
 
     node.on('collectibleCreate', function(collectible) {
-      context.event?.({name: "collectible_created", collectible}, game)
+      handle('event', {name: "collectible_created", collectible}, game)
     });
 
     node.on('collectiblePick', function(collectible, ship) {
-      context.event?.({name: "collectible_picked", collectible, ship}, game)
+      handle('event', {name: "collectible_picked", collectible, ship}, game)
     });
 
     node.on('stationDestroy', function(station) {
-      context.event?.({name: "station_destroyed", station}, game)
+      handle('event', {name: "station_destroyed", station}, game)
     });
 
     node.on('stationModuleDestroy', function(module) {
-      context.event?.({name: "station_module_destroyed", module}, game)
+      handle('event', {name: "station_module_destroyed", module}, game)
     });
 
     node.on('stationModuleRepair', function(module) {
-      context.event?.({name: "station_module_repaired", module}, game)
+      handle('event', {name: "station_module_repaired", module}, game)
     });
 
     node.on('UIComponentClick', function (id, ship) {
-      context.event?.({name: "ui_component_clicked", id, ship}, game)
+      handle('event', {name: "ui_component_clicked", id, ship}, game)
     });
   }
 
@@ -155,26 +158,44 @@ class StarblastBrowserModRunner {
   #path;
   #URL;
   #code;
+  #lastCode = null;
 
   #node;
-  #game
+  #game;
 
-  loadCodeFromString (text) {
-    this.#path = null;
-    this.#URL = null;
-    this.#code = text
+  #sameCodeExecution;
+  #crashOnError;
+
+  #assignBasic () {
+    let node = this.#node;
+    this.#game.modding = {
+      terminal: {
+        echo: node.log.bind(node),
+        error: node.error.bind(node)
+      },
+      context: {}
+    }
   }
 
-  loadCodeFromLocal (path) {
+  async loadCodeFromString (text) {
+    this.#path = null;
+    this.#URL = null;
+    this.#code = text;
+    if (this.#node.started) await this.#applyChanges()
+  }
+
+  async loadCodeFromLocal (path) {
     this.#path = path;
     this.#URL = null;
-    this.#code = null
+    this.#code = null;
+    if (this.#node.started) await this.#applyChanges()
   }
 
-  loadCodeFromExternal (URL) {
+  async loadCodeFromExternal (URL) {
     this.#path = null;
     this.#URL = URL;
-    this.#code = null
+    this.#code = null;
+    if (this.#node.started) await this.#applyChanges()
   }
 
   #fromLocal () {
@@ -194,7 +215,7 @@ class StarblastBrowserModRunner {
         // here we're only checking for 200.
         if (Math.trunc(statusCode / 100) != 2) {
           res.resume();
-          reject(new Error('Request Failed.\nStatus Code: '+ statusCode))
+          reject(new Error("Failed to fetch the file at URL '" + URL + "'. Resource status code: "+ statusCode))
         }
 
         let rawData = '';
@@ -208,11 +229,27 @@ class StarblastBrowserModRunner {
     })
   }
 
+  async #applyChanges () {
+    let lastCode = this.#lastCode;
+    try {
+      this.#lastCode = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code);
+      let game = this.#game;
+      if (this.#lastCode == lastCode && this.#node.started && !this.#sameCodeExecution) return;
+      this.#assignBasic()
+      new AsyncFunction("game", "echo", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo);
+    }
+    catch (e) {
+      this.#lastCode = lastCode;
+      throw e;
+    }
+  }
+
   async start () {
-    let code = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code), game = this.#game, node = this.#node;
-    if (!node.started) game.custom = {};
-    new AsyncFunction("game", "echo", code).call(game.modding.context, game, game.modding.terminal.echo);
-    node.setOptions(Object.assign({}, game.modding.context.options));
+    let node = this.#node;
+    if (!node.started) {
+      await this.#applyChanges();
+      node.setOptions(Object.assign({}, this.#game.modding?.context?.options))
+    }
     return await node.start()
   }
 

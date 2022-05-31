@@ -1,6 +1,6 @@
 {
   "name": "starblast-browser-mod-runner",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "A npm package to run mod codes from browser (featuring the starblast-modding (https://npmjs.com/package/starblast-modding) npm itself)",
   "main": "./index.js",
   "scripts": {
@@ -25,6 +25,6 @@
   },
   "license": "ISC",
   "dependencies": {
-    "starblast-modding": "^1.0.10-alpha6"
+    "starblast-modding": "^1.0.11-alpha6"
   }
 }

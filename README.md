@@ -20,10 +20,11 @@ const StarblastBrowserModRunner = require("starblast-browser-mod-runner");
 ### Create a container
 ```js
 let container = new BrowserModRunner({
-  cacheECPKey: true,
-  cacheOptions: true
+  cacheECPKey: true, // starblast-modding NPM feature
+  cacheOptions: true, // starblast-modding NPM feature, again
+  sameCodeExecution: false, // loading the same code will trigger the execution or not, default false
+  crashOnError: false, // when tick or event function fails, the mod will crash (true) or it just logs the error and continue (false)
 });
-// options from the original starblast-modding npm, note that `cacheEvents` will always be true
 ```
 
 This container will act as your browser, which has methods described below:
@@ -32,13 +33,15 @@ This container will act as your browser, which has methods described below:
 | - | - |
 | setRegion(region) | set the region the mod will be run on, must be Asia, America or Europe |
 | setECPKey(ECPKey) | set the ECP Key this npm will be used for sending mod creation requests |
-| start() | start the mod, returns a promise |
-| stop() | stop the mod, returns a promise |
-| loadCodeFromString(script) | load the mod code from a script string |
-| loadCodeFromLocal(path) | load the mod code from a local file (File on your device) |
-| loadCodeFromExternal(URL) | load the mod code from an external URL file |
+| <Async> start() | start the mod, returns a promise |
+| <Async> stop() | stop the mod, returns a promise |
+| <Async> loadCodeFromString(script) | load the mod code from a script string |
+| <Async> loadCodeFromLocal(path) | load the mod code from a local file (File on your device) |
+| <Async> loadCodeFromExternal(URL) | load the mod code from an external URL file |
 | getNode() | returns the original game object called from the [starblast-modding](https://npmjs.com/package/starblast-modding) npm) |
 | getGame() | returns the game object, which acts the same as it is in browser |
+
+**Note:** if there are any errors in the code, it will be only rejected in promise when you start the mod or request for new codes while the mod is still running.
 
 ### Example
 Here is an example for running SDC code pulled from Neuronality's site:
