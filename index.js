@@ -7,7 +7,9 @@ const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 class StarblastBrowserModRunner {
   constructor(options) {
-    this.#sameCodeExecution = !!options?.sameCodeExecution
+    this.#sameCodeExecution = !!options?.sameCodeExecution;
+    let logErrors = this.#logErrors = !!(options?.logErrors ?? true);
+    let logMessages = this.#logMessages = !!(options?.logMessages ?? true);
     let crashOnError = this.#crashOnError = !!options?.crashOnError;
     let node = this.#node = new StarblastModding.Client({...options, cacheEvents: true});
     this.#game = {}
@@ -18,7 +20,7 @@ class StarblastBrowserModRunner {
       try { game.modding?.context?.[spec]?.(...params) }
       catch (e) {
         if (crashOnError) throw e;
-        else console.error(e);
+        else node.error(e);
       }
     };
 
@@ -52,7 +54,7 @@ class StarblastBrowserModRunner {
 
     for (let i of ["alien", "asteroid", "collectible"]) game["add" + i[0].toUpperCase() + i.slice(1)] = function (...data) {
       let name = i + "s";
-      node[name].add(...data).then(a => {}).catch(b => console.error("[In-game Error]", b));
+      node[name].add(...data).then(a => {}).catch(b => node.error("[In-game Error]", b));
       let test = this[name].slice(-1)[0];
       return test;
     }
@@ -74,20 +76,20 @@ class StarblastBrowserModRunner {
     // events
 
     node.on('error', function(error) {
-      console.error("[In-game Error]", error)
+      if (logErrors) console.error("[In-game Error]", error)
     });
 
     node.on('log', function(...args) {
-      console.log("[In-game Log]", ...args);
+      if (logMessages) console.log("[In-game Log]", ...args)
     });
 
     node.on('start', function (link) {
-      console.log("Mod started\n" + link);
+      node.log("Mod started\n" + link);
       handle('event', {name: "mod_started", link}, game)
     });
 
     node.on('stop', function () {
-      console.log("Mod stopped");
+      node.log("Mod stopped");
       handle('event', {name: "mod_stopped"}, game)
     });
 
@@ -165,6 +167,9 @@ class StarblastBrowserModRunner {
 
   #sameCodeExecution;
   #crashOnError;
+
+  #logErrors;
+  #logMessages;
 
   #assignBasic () {
     let node = this.#node;
