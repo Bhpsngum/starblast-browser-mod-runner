@@ -27,7 +27,6 @@ Properties to be passed in the `options` object:
 | Property | Default (if null/undefined or omitted)| Description |
 | - | - | - |
 | cacheECPKey | false | starblast-modding NPM feature |
-| cacheOptions | false | starblast-modding NPM feature, again |
 | sameCodeExecution | false | loading the same code will trigger the execution or not |
 | crashOnError | false | when tick or event function fails, the mod will crash (true) or it just logs the error and continue (false) |
 | logErrors | true | game will log any errors or not |
@@ -42,12 +41,14 @@ This container will act as your browser, which has methods described below:
 | <Async> start() | start the mod, returns a promise |
 | <Async> stop() | stop the mod, returns a promise |
 | <Async> loadCodeFromString(script) | load the mod code from a script string |
-| <Async> loadCodeFromLocal(path) | load the mod code from a local file (File on your device) |
-| <Async> loadCodeFromExternal(URL) | load the mod code from an external URL file |
+| <Async> loadCodeFromLocal(path, watchChanges, interval) | load the mod code from a local file (File on your device) |
+| <Async> loadCodeFromExternal(URL, watchChanges, interval) | load the mod code from an external URL file |
 | getNode() | returns the original game object called from the [starblast-modding](https://npmjs.com/package/starblast-modding) npm |
 | getGame() | returns the game object, which acts the same as it is in browser |
 
-**Note:** if there are any errors in the code, the errors will be logged (with `logErrors = true`) when you start the mod or request for new codes while the mod is still running.
+**Note:**
+* If there are any errors in the code, the errors will be logged (with `logErrors = true`) when you start the mod or request for new codes while the mod is still running.
+* With `loadCodeFromLocal` and `loadCodeFromExternal` method, you can define changes detector by passing `watchChanges` (`true`/`false`) and `interval` (integer with value > 1) to set up watchers.
 
 ### Example
 Here is an example for running SDC code pulled from Neuronality's site:

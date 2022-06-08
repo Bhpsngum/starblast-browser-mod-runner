@@ -5,13 +5,15 @@ const http = require('http');
 
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
+const ModdingEvents = StarblastModding.events;
+
 class StarblastBrowserModRunner {
   constructor(options) {
     this.#sameCodeExecution = !!options?.sameCodeExecution;
     let logErrors = this.#logErrors = !!(options?.logErrors ?? true);
     let logMessages = this.#logMessages = !!(options?.logMessages ?? true);
     let crashOnError = this.#crashOnError = !!options?.crashOnError;
-    let node = this.#node = new StarblastModding.Client({...options, cacheEvents: true});
+    let node = this.#node = new StarblastModding.Client({...options, cacheEvents: true, cacheOptions: false});
     this.#game = {}
 
     this.#assignBasic();
@@ -22,12 +24,12 @@ class StarblastBrowserModRunner {
         if (crashOnError) throw e;
         else node.error(e);
       }
-    };
+    }, _this = this;
 
     Object.defineProperty(game, 'custom', {
       get () { return node.custom },
       set (value) { node.custom = value }
-    })
+    });
 
     for (let i of ["setCustomMap", "setOpen"]) game[i] = node[i].bind(node);
 
@@ -41,9 +43,9 @@ class StarblastBrowserModRunner {
       Object.defineProperty(node[i + "s"].StructureConstructor.prototype, 'game', {
         get () { return game },
         set (value) {}
-      })
-      game["find" + i[0].toUpperCase() + i.slice(1)] = function(...data) {
-        return node[i + "s"].findById(...data)
+      });
+      game["find" + i[0].toUpperCase() + i.slice(1)] = function(id) {
+        return this[i + "s"].find(st => st.id === id) ?? null
       }
     }
 
@@ -54,12 +56,13 @@ class StarblastBrowserModRunner {
 
     for (let i of ["alien", "asteroid", "collectible"]) game["add" + i[0].toUpperCase() + i.slice(1)] = function (...data) {
       let name = i + "s";
-      node[name].add(...data).then(a => {}).catch(b => node.error("[In-game Error]", b));
-      let test = this[name].slice(-1)[0];
-      return test;
+      node[name].add(...data).then(a => {}).catch(node.error);
+      return this[name].slice(-1)[0]
     }
 
-    game.setUIComponent = node.ships.setUIComponent.bind(node.ships);
+    game.setUIComponent = function(...data) {
+      node.ships.setUIComponent(...data)
+    }
 
     game.setObject = function(...data) {
       node.objects.set(...data)
@@ -69,82 +72,84 @@ class StarblastBrowserModRunner {
       node.objects.remove(...data)
     }
 
-    node.on('tick', function (tick) {
+    node.on(ModdingEvents.TICK, function (tick) {
       handle('tick', game)
     });
 
     // events
 
-    node.on('error', function(error) {
+    node.on(ModdingEvents.ERROR, function(error) {
       if (logErrors) console.error("[In-game Error]", error)
     });
 
-    node.on('log', function(...args) {
+    node.on(ModdingEvents.LOG, function(...args) {
       if (logMessages) console.log("[In-game Log]", ...args)
     });
 
-    node.on('start', function (link) {
-      node.log("Mod started\n" + link);
+    node.on(ModdingEvents.MOD_STARTED, function (link) {
+      node.log("Mod started");
+      node.log(link);
       handle('event', {name: "mod_started", link}, game)
     });
 
-    node.on('stop', function () {
+    node.on(ModdingEvents.MOD_STOPPED, function () {
+      _this.#setWatchInterval(false, null);
       node.log("Mod stopped");
       handle('event', {name: "mod_stopped"}, game)
     });
 
-    node.on('shipRespawn', function(ship) {
+    node.on(ModdingEvents.SHIP_RESPAWNED, function(ship) {
       handle('event', {name: "ship_spawned", ship}, game)
     });
 
-    node.on('shipSpawn', function(ship) {
+    node.on(ModdingEvents.SHIP_SPAWNED, function(ship) {
       handle('event', {name: "ship_spawned", ship}, game)
     });
 
-    node.on('shipDestroy', function(ship, killer) {
+    node.on(ModdingEvents.SHIP_DESTROYED, function(ship, killer) {
       handle('event', {name: "ship_destroyed", ship, killer}, game)
     });
 
-    node.on('shipDisconnect', function(ship) {
+    node.on(ModdingEvents.SHIP_DISCONNECTED, function(ship) {
       handle('event', {name: "ship_disconnected", ship}, game)
     });
 
-    node.on('alienCreate', function(alien) {
+    node.on(ModdingEvents.ALIEN_CREATED, function(alien) {
       handle('event', {name: "alien_created", alien}, game)
     });
 
-    node.on('alienDestroy', function(alien, killer) {
+    node.on(ModdingEvents.ALIEN_DESTROYED, function(alien, killer) {
       handle('event', {name: "alien_destroyed", alien, killer}, game)
     });
 
-    node.on('asteroidCreate', function(asteroid) {
+    node.on(ModdingEvents.ASTEROID_CREATED, function(asteroid) {
       handle('event', {name: "asteroid_created", asteroid}, game)
     });
-    node.on('asteroidDestroy', function(asteroid, killer) {
+    node.on(ModdingEvents.ASTEROID_DESTROYED, function(asteroid, killer) {
       handle('event', {name: "asteroid_destroyed", asteroid, killer}, game)
     });
 
-    node.on('collectibleCreate', function(collectible) {
+    node.on(ModdingEvents.COLLECTIBLE_CREATED, function(collectible) {
       handle('event', {name: "collectible_created", collectible}, game)
     });
 
-    node.on('collectiblePick', function(collectible, ship) {
+    node.on(ModdingEvents.COLLECTIBLE_PICKED, function(collectible, ship) {
       handle('event', {name: "collectible_picked", collectible, ship}, game)
     });
 
-    node.on('stationDestroy', function(station) {
+    node.on(ModdingEvents.STATION_DESTROYED, function(station) {
       handle('event', {name: "station_destroyed", station}, game)
     });
 
-    node.on('stationModuleDestroy', function(module) {
+    node.on(ModdingEvents.STATION_MODULE_DESTROYED, function(module) {
       handle('event', {name: "station_module_destroyed", module}, game)
     });
 
-    node.on('stationModuleRepair', function(module) {
+    node.on(ModdingEvents.STATION_MODULE_REPAIRED, function(module) {
       handle('event', {name: "station_module_repaired", module}, game)
     });
 
-    node.on('UIComponentClick', function (id, ship) {
+    node.on(ModdingEvents.UI_COMPONENT_CLICKED, function (id, ship) {
       handle('event', {name: "ui_component_clicked", id, ship}, game)
     });
   }
@@ -162,6 +167,11 @@ class StarblastBrowserModRunner {
   #code;
   #lastCode = null;
 
+  #watchChanges = false;
+  #watchInterval = 5000;
+  #watchIntervalID = null;
+  #assignedWatch = false;
+
   #node;
   #game;
 
@@ -178,29 +188,47 @@ class StarblastBrowserModRunner {
         echo: node.log.bind(node),
         error: node.error.bind(node)
       },
+      commands: {},
       context: {}
     }
+  }
+
+  #setWatchInterval (watchChanges, interval) {
+    clearInterval(this.#watchIntervalID);
+    this.#assignedWatch = false;
+    this.#watchChanges = !!watchChanges;
+    if (this.#watchChanges) this.#watchInterval = Math.max(1, Math.floor(interval)) || 5000;
+    return this
   }
 
   async loadCodeFromString (text) {
     this.#path = null;
     this.#URL = null;
     this.#code = text;
-    if (this.#node.started) await this.#applyChanges()
+
+    this.#setWatchInterval(false, null);
+
+    if (this.#node.started) await this.#applyChanges(true)
   }
 
-  async loadCodeFromLocal (path) {
+  async loadCodeFromLocal (path, watchChanges = false, interval = 5000) {
     this.#path = path;
     this.#URL = null;
     this.#code = null;
-    if (this.#node.started) await this.#applyChanges()
+
+    this.#setWatchInterval(watchChanges, interval);
+
+    if (this.#node.started) await this.#applyChanges(true)
   }
 
-  async loadCodeFromExternal (URL) {
+  async loadCodeFromExternal (URL, watchChanges = false, interval = 5000) {
     this.#path = null;
     this.#URL = URL;
     this.#code = null;
-    if (this.#node.started) await this.#applyChanges()
+
+    this.#setWatchInterval(watchChanges, interval);
+
+    if (this.#node.started) await this.#applyChanges(true)
   }
 
   #fromLocal () {
@@ -234,14 +262,20 @@ class StarblastBrowserModRunner {
     })
   }
 
-  async #applyChanges () {
+  async #applyChanges (nonPassive) {
     let lastCode = this.#lastCode;
     try {
       this.#lastCode = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code);
+      if (this.#watchChanges && (this.#URL != null || this.#path != null) && !this.#assignedWatch) {
+        clearInterval(this.#watchIntervalID);
+        this.#watchIntervalID = setInterval(this.#applyChanges.bind(this), this.#watchInterval);
+        this.#assignedWatch = true;
+      }
       let game = this.#game;
-      if (this.#lastCode == lastCode && this.#node.started && !this.#sameCodeExecution) return;
+      if (this.#lastCode == lastCode && this.#node.started && (!nonPassive || !this.#sameCodeExecution)) return;
       this.#assignBasic()
-      new AsyncFunction("game", "echo", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo);
+      try { new AsyncFunction("game", "echo", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo) }
+      catch (e) { this.#node.error(e) }
     }
     catch (e) {
       this.#lastCode = lastCode;
@@ -252,14 +286,15 @@ class StarblastBrowserModRunner {
   async start () {
     let node = this.#node;
     if (!node.started) {
-      await this.#applyChanges();
+      await this.#applyChanges(true);
       node.setOptions(Object.assign({}, this.#game.modding?.context?.options))
     }
     return await node.start()
   }
 
-  stop () {
-    return this.#node.stop()
+  async stop () {
+    await this.#node.stop();
+    return this
   }
 }
 
