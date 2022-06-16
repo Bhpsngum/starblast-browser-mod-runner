@@ -274,7 +274,7 @@ class StarblastBrowserModRunner {
       let game = this.#game;
       if (this.#lastCode == lastCode && this.#node.started && (!nonPassive || !this.#sameCodeExecution)) return;
       this.#assignBasic()
-      try { new AsyncFunction("game", "echo", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo) }
+      try { new AsyncFunction("game", "echo", "window", "global", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo, global, void 0) }
       catch (e) { this.#node.error(e) }
     }
     catch (e) {
