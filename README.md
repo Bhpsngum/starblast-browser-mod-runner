@@ -27,8 +27,8 @@ Properties to be passed in the `options` object: (note that if both one property
 | Property | Alias | Default (if null/undefined or omitted)| Description |
 | - | - | - | - |
 | cacheECPKey | none | false | starblast-modding NPM feature |
-| sameCodeExecution | none | false | loading the same code will trigger the execution or not |
-| crashOnException | crashOnError | false | when tick or event function fails, the mod will crash (true) or it just logs the error and continue (false) |
+| sameCodeExecution | none | false | loading the same code will trigger the execution or not<br>**Note:** This feature only works when you call `loadCodeFromString`, `loadCodeFromLocal` or `loadCodeFromExternal` methods, and not during the auto-update process |
+| crashOnException | crashOnError | false | when tick or event function, or mod code execution fails, the mod will crash (true) or it just logs the error and continue (false) |
 | logErrors | logExceptions | true | game will log any errors or not |
 | logMessages | none | true | game will log any in-game logs or not |
 

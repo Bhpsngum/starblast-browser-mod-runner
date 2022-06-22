@@ -267,24 +267,21 @@ class StarblastBrowserModRunner {
     })
   }
 
-  async #applyChanges (nonPassive) {
-    let lastCode = this.#lastCode;
+  async #applyChanges (forced) {
     try {
+      let lastCode = this.#lastCode;
       this.#lastCode = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code);
       if (this.#watchChanges && (this.#URL != null || this.#path != null) && !this.#assignedWatch) {
         clearInterval(this.#watchIntervalID);
-        this.#watchIntervalID = setInterval(function(){
-          this.#applyChanges().catch(e => this.#handle(function () { throw e }));
-        }.bind(this), this.#watchInterval);
+        this.#watchIntervalID = setInterval(this.#applyChanges.bind(this), this.#watchInterval);
         this.#assignedWatch = true;
       }
       let game = this.#game;
-      if (this.#lastCode == lastCode && this.#node.started && (!nonPassive || !this.#sameCodeExecution)) return;
+      if (this.#lastCode == lastCode && this.#node.started && (!forced || !this.#sameCodeExecution)) return;
       this.#assignBasic()
       await new AsyncFunction("game", "echo", "window", "global", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo, global, void 0)
     }
     catch (e) {
-      this.#lastCode = lastCode;
       this.#handle(function () { throw e })
     }
   }
