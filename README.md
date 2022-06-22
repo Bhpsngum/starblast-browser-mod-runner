@@ -3,7 +3,7 @@ A npm package to run mod codes from browser (featuring the [starblast-modding](h
 
 ## Warning
 * This package doesn't support undocumented features like accessing through `game.modding`, etc.
-* Since this package is dependent on the [starblast-modding](https://npmjs.com/package/starblast-modding) npm, some of its latest features (which may doesn't work in browsers) will be available
+* Since this package is dependent on the [starblast-modding](https://npmjs.com/package/starblast-modding) npm, some of its latest features (which may not work in browsers) will be available
 
 ## Installation
 ```
