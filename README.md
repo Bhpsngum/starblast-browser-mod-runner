@@ -22,15 +22,15 @@ const StarblastBrowserModRunner = require("starblast-browser-mod-runner");
 let container = new BrowserModRunner(options);
 ```
 
-Properties to be passed in the `options` object:
+Properties to be passed in the `options` object: (note that if both one property and its aliases exist on the object, the value of the main one will be chosen)
 
-| Property | Default (if null/undefined or omitted)| Description |
-| - | - | - |
-| cacheECPKey | false | starblast-modding NPM feature |
-| sameCodeExecution | false | loading the same code will trigger the execution or not |
-| crashOnError | false | when tick or event function fails, the mod will crash (true) or it just logs the error and continue (false) |
-| logErrors | true | game will log any errors or not |
-| logMessages | true | game will log any in-game logs or not |
+| Property | Alias | Default (if null/undefined or omitted)| Description |
+| - | - | - | - |
+| cacheECPKey | none | false | starblast-modding NPM feature |
+| sameCodeExecution | none | false | loading the same code will trigger the execution or not |
+| crashOnException | crashOnError | false | when tick or event function fails, the mod will crash (true) or it just logs the error and continue (false) |
+| logErrors | logExceptions | true | game will log any errors or not |
+| logMessages | none | true | game will log any in-game logs or not |
 
 This container will act as your browser, which has methods described below:
 

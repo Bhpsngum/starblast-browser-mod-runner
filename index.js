@@ -10,21 +10,18 @@ const ModdingEvents = StarblastModding.events;
 class StarblastBrowserModRunner {
   constructor(options) {
     this.#sameCodeExecution = !!options?.sameCodeExecution;
-    let logErrors = this.#logErrors = !!(options?.logErrors ?? true);
+    let logErrors = this.#logErrors = !!(options?.logErrors ?? options.logExceptions ?? true);
     let logMessages = this.#logMessages = !!(options?.logMessages ?? true);
-    let crashOnError = this.#crashOnError = !!options?.crashOnError;
+    let crashOnError = this.#crashOnError = !!(options?.crashOnException ?? options?.crashOnError);
     let node = this.#node = new StarblastModding.Client({...options, cacheEvents: true, cacheOptions: false});
     this.#game = {}
 
     this.#assignBasic();
 
     let game = this.#game, handle = function (spec, ...params) {
-      try { game.modding?.context?.[spec]?.(...params) }
-      catch (e) {
-        if (crashOnError) throw e;
-        else node.error(e);
-      }
-    }, _this = this;
+      let context = game.modding?.context;
+      this.#handle(context?.[spec]?.bind(context), ...params)
+    }.bind(this), _this = this;
 
     Object.defineProperty(game, 'custom', {
       get () { return node.custom },
@@ -181,6 +178,14 @@ class StarblastBrowserModRunner {
   #logErrors;
   #logMessages;
 
+  #handle (func, ...params) {
+    try { func?.(...params) }
+    catch (e) {
+      if (this.#crashOnError) throw e;
+      else this.#node.error(e)
+    }
+  }
+
   #assignBasic () {
     let node = this.#node;
     this.#game.modding = {
@@ -268,18 +273,19 @@ class StarblastBrowserModRunner {
       this.#lastCode = this.#URL ? (await this.#fromExternal()) : (this.#path ? (await this.#fromLocal()) : this.#code);
       if (this.#watchChanges && (this.#URL != null || this.#path != null) && !this.#assignedWatch) {
         clearInterval(this.#watchIntervalID);
-        this.#watchIntervalID = setInterval(this.#applyChanges.bind(this), this.#watchInterval);
+        this.#watchIntervalID = setInterval(function(){
+          this.#applyChanges().catch(e => this.#handle(function () { throw e }));
+        }.bind(this), this.#watchInterval);
         this.#assignedWatch = true;
       }
       let game = this.#game;
       if (this.#lastCode == lastCode && this.#node.started && (!nonPassive || !this.#sameCodeExecution)) return;
       this.#assignBasic()
-      try { new AsyncFunction("game", "echo", "window", "global", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo, global, void 0) }
-      catch (e) { this.#node.error(e) }
+      await new AsyncFunction("game", "echo", "window", "global", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo, global, void 0)
     }
     catch (e) {
       this.#lastCode = lastCode;
-      throw e;
+      this.#handle(function () { throw e })
     }
   }
 
