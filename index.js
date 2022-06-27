@@ -203,6 +203,7 @@ class StarblastBrowserModRunner {
       tick: function (game) {
         game?.tick?.()
       },
+      game: this.#game,
       commands: {},
       context: {}
     }
