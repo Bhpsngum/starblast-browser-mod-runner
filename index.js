@@ -194,6 +194,7 @@ class StarblastBrowserModRunner {
 
   #assignBasic () {
     let node = this.#node;
+    this.#game.tick = function () {};
     this.#game.modding = {
       terminal: {
         echo: node.log.bind(node),
