@@ -46,8 +46,13 @@ class StarblastBrowserModRunner {
       }
     }
 
-    for (let i of ["step", "options", "link"]) Object.defineProperty(game, i, {
+    for (let i of ["options", "link"]) Object.defineProperty(game, i, {
       get() { return node[i] ?? null },
+      set (value) {}
+    });
+
+    Object.defineProperty(game, 'step', {
+      get () { return node.timer.step },
       set (value) {}
     });
 
