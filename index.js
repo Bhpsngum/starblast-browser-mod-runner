@@ -70,6 +70,7 @@ class StarblastBrowserModRunner {
     }
 
     node.on(ModdingEvents.TICK, function (tick) {
+      game?.modding?.tick?.();
       handle('tick', game)
     });
 
@@ -192,6 +193,9 @@ class StarblastBrowserModRunner {
       terminal: {
         echo: node.log.bind(node),
         error: node.error.bind(node)
+      },
+      tick: function (game) {
+        game?.tick?.()
       },
       commands: {},
       context: {}
