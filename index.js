@@ -278,7 +278,7 @@ class StarblastBrowserModRunner {
 
     this.#setWatchInterval(false, null);
 
-    if (this.#node.started) await this.#applyChanges(true)
+    if (this.#node.processStarted) await this.#applyChanges(true)
   }
 
   async loadCodeFromLocal (path, watchChanges = false, interval = 5000) {
@@ -288,7 +288,7 @@ class StarblastBrowserModRunner {
 
     this.#setWatchInterval(watchChanges, interval);
 
-    if (this.#node.started) await this.#applyChanges(true)
+    if (this.#node.processStarted) await this.#applyChanges(true)
   }
 
   async loadCodeFromExternal (URL, watchChanges = false, interval = 5000) {
@@ -298,7 +298,7 @@ class StarblastBrowserModRunner {
 
     this.#setWatchInterval(watchChanges, interval);
 
-    if (this.#node.started) await this.#applyChanges(true)
+    if (this.#node.processStarted) await this.#applyChanges(true)
   }
 
   #fromLocal () {
@@ -341,10 +341,14 @@ class StarblastBrowserModRunner {
         this.#watchIntervalID = setInterval(this.#applyChanges.bind(this), this.#watchInterval);
         this.#assignedWatch = true;
       }
-      if (this.#lastCode == lastCode && this.#node.started && (!forced || !this.#sameCodeExecution)) return;
-      if (!this.started) this.#game = new Game(this.#node);
-      let game = this.#game;
-      await new AsyncFunction("game", "echo", "window", "global", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo, global, void 0)
+      let sameCode = this.#lastCode == lastCode;
+      if (forced ? (!sameCode || this.#sameCodeExecution) : !sameCode) {
+        if (!this.#node.processStarted) this.#game = new Game(this.#node);
+        else try { this.#game.modding.context = {} } catch (e) {};
+        let game = this.#game;
+        await new AsyncFunction("game", "echo", "window", "global", this.#lastCode).call(game.modding.context, game, game.modding.terminal.echo, global, void 0)
+      }
+
     }
     catch (e) {
       this.#handle(function () { throw e })
@@ -353,10 +357,11 @@ class StarblastBrowserModRunner {
 
   async start () {
     let node = this.#node;
-    if (!node.started) {
+    if (!this.#node.processStarted) {
       await this.#applyChanges(true);
       node.setOptions(Object.assign({}, this.#game.modding?.context?.options))
     }
+    else if (!this.#node.started) throw new Error("Mod is starting. Please be patience");
     return await node.start()
   }
 
